@@ -6,9 +6,9 @@ const app = express();
 app.use(cors()); // simple allow-all during dev; lock down for production
 app.get("/data", (req, res) => {
     res.json({
-        name: "John",
-        age: 20,
-        city: "Manila"
+        name: "Edrik",
+        age: 49,
+        city: "Aburlan"
     });
 });
 
