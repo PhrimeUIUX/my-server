@@ -1,13 +1,12 @@
+// index.js
 const express = require("express");
+const cors = require("cors"); // see CORS section below
 const app = express();
-const port = process.env.PORT || 3000;
 
-app.get("/", (req, res) => {
-    res.send("Render server is working!");
-});
-
+app.use(cors()); // simple allow-all during dev; lock down for production
 app.get("/data", (req, res) => {
-    res.json({ message: "Hello from Render!" });
+  res.json({ name: "Ephraim", age: 23, location: "Palawan" });
 });
 
-app.listen(port, () => console.log("Server running on " + port));
+const port = process.env.PORT || 3000;
+app.listen(port, () => console.log(`Server running on port ${port}`));
