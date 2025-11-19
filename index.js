@@ -5,7 +5,11 @@ const app = express();
 
 app.use(cors()); // simple allow-all during dev; lock down for production
 app.get("/data", (req, res) => {
-  res.json({ name: "Ephraim", age: 23, location: "Palawan" });
+    res.json({
+        name: "John",
+        age: 20,
+        city: "Manila"
+    });
 });
 
 const port = process.env.PORT || 3000;
