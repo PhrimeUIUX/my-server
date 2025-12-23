@@ -7,17 +7,12 @@ const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 
 const app = express();
 app.use(cors());
-app.use(express.json()); // parse JSON
+app.use(express.json());
 
 // ===== Multer for file uploading =====
 const upload = multer();
 
 // ===== Cloudflare R2 Client =====
-// Make sure ENV variables exist in Render:
-// CF_ACCOUNT_ID
-// R2_ACCESS_KEY
-// R2_SECRET_KEY
-// R2_BUCKET_NAME  → example: pub-8010fa08735c45f79ee14c0a5a6e3880
 const r2 = new S3Client({
   region: "auto",
   endpoint: `https://${process.env.CF_ACCOUNT_ID}.r2.cloudflarestorage.com`,
@@ -28,16 +23,23 @@ const r2 = new S3Client({
 });
 
 // ===== MongoDB Connection =====
-const uri = process.env.MONGO_URI || "mongodb+srv://admin:password1234@pringles.xzpvaum.mongodb.net/?appName=Pringles";
+const uri =
+  process.env.MONGO_URI ||
+  "mongodb+srv://admin:password1234@pringles.xzpvaum.mongodb.net/?appName=Pringles";
+
 const client = new MongoClient(uri);
 
 let usersCollection;
+let appConfigCollection;
 
 async function connectDB() {
   try {
     await client.connect();
     const db = client.db("mydatabase");
+
     usersCollection = db.collection("users");
+    appConfigCollection = db.collection("app_config");
+
     console.log("MongoDB connected!");
   } catch (err) {
     console.error("MongoDB connection error:", err);
@@ -61,7 +63,6 @@ app.post("/upload", upload.single("file"), async (req, res) => {
     );
 
     const imageUrl = `https://${process.env.R2_BUCKET_NAME}.r2.dev/${key}`;
-
     res.json({ url: imageUrl });
   } catch (err) {
     console.error("Upload error:", err);
@@ -96,7 +97,7 @@ app.post("/users", async (req, res) => {
     age,
     email,
     city,
-    image // <- save image URL to MongoDB
+    image
   });
 
   res.json({ message: "User added", id: result.insertedId });
@@ -124,6 +125,49 @@ app.delete("/users/:id", async (req, res) => {
   res.json({ message: "User deleted" });
 });
 
+// ===== GET APP VERSION =====
+app.get("/app-version", async (req, res) => {
+  const config = await appConfigCollection.findOne({ _id: "app_version" });
+
+  if (!config) {
+    return res.json({
+      version: "0.0.0",
+      build: 0,
+      full: "0.0.0(0)"
+    });
+  }
+
+  res.json(config);
+});
+
+// ===== UPDATE APP VERSION =====
+app.post("/app-version", async (req, res) => {
+  const { version, build } = req.body;
+
+  if (!version || build === undefined) {
+    return res.status(400).json({ error: "version and build required" });
+  }
+
+  const full = `${version}(${build})`;
+
+  await appConfigCollection.updateOne(
+    { _id: "app_version" },
+    {
+      $set: {
+        version,
+        build,
+        full,
+        updatedAt: new Date()
+      }
+    },
+    { upsert: true }
+  );
+
+  res.json({ message: "App version updated", full });
+});
+
 // ===== START SERVER =====
 const port = process.env.PORT || 3000;
-app.listen(port, () => console.log(`Server running on port ${port}`));
+app.listen(port, () =>
+  console.log(`Server running on port ${port}`)
+);
