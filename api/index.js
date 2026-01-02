@@ -1,8 +1,8 @@
-import express from "express";
+const express = require("express");
 
 const app = express();
 
-/* 🔥 PUT CORS HERE (TOP, BEFORE ROUTES) */
+/* ===== CORS (SAFE & WORKING) ===== */
 app.use((req, res, next) => {
   const allowedOrigins = [
     "https://ppctoda.vercel.app"
@@ -15,7 +15,7 @@ app.use((req, res, next) => {
   }
 
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   res.setHeader("Access-Control-Allow-Credentials", "true");
 
   if (req.method === "OPTIONS") {
@@ -25,17 +25,21 @@ app.use((req, res, next) => {
   next();
 });
 
-/* JSON body parser */
 app.use(express.json());
 
-/* ROUTES BELOW */
+/* ===== ROUTES ===== */
+
 app.get("/api/app-version", (req, res) => {
-  res.json({ version: "1.0.0", build: 1, full: "1.0.0 (1)" });
+  res.json({
+    version: "1.0.0",
+    build: 1,
+    full: "1.0.0 (1)"
+  });
 });
 
 app.get("/api/users", (req, res) => {
   res.json([]);
 });
 
-/* EXPORT FOR VERCEL */
-export default app;
+/* ===== EXPORT (NO app.listen!) ===== */
+module.exports = app;
