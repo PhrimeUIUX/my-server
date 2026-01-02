@@ -4,6 +4,7 @@ const { MongoClient, ObjectId } = require("mongodb");
 const cors = require("cors");
 const multer = require("multer");
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
+const { Storage } = require("@google-cloud/storage"); // ✅ ADD
 
 const app = express();
 app.use(cors());
@@ -21,6 +22,11 @@ const r2 = new S3Client({
     secretAccessKey: process.env.R2_SECRET_KEY
   }
 });
+
+// ===== Google Cloud Storage (APK Upload) =====
+const gcs = new Storage(); // uses GOOGLE_APPLICATION_CREDENTIALS from Render
+const APK_BUCKET = "ppc-toda-apk";       // 🔴 CHANGE if different
+const APK_FILENAME = "app-release.apk";  // 🔴 single filename = replace APK
 
 // ===== MongoDB Connection =====
 const uri =
@@ -67,6 +73,28 @@ app.post("/upload", upload.single("file"), async (req, res) => {
   } catch (err) {
     console.error("Upload error:", err);
     res.status(500).json({ error: "Upload failed" });
+  }
+});
+
+// ===== APK UPLOAD (Google Cloud Storage - SIGNED URL) =====
+app.get("/apk-upload-url", async (req, res) => {
+  try {
+    const options = {
+      version: "v4",
+      action: "write",
+      expires: Date.now() + 10 * 60 * 1000, // 10 minutes
+      contentType: "application/vnd.android.package-archive"
+    };
+
+    const [url] = await gcs
+      .bucket(APK_BUCKET)
+      .file(APK_FILENAME)
+      .getSignedUrl(options);
+
+    res.json({ url });
+  } catch (err) {
+    console.error("APK signed URL error:", err);
+    res.status(500).json({ error: "Failed to generate APK upload URL" });
   }
 });
 
