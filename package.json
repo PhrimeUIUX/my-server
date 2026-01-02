@@ -1,8 +1,9 @@
 {
-  "type": "module",
+  "name": "ppc-backend",
+  "version": "1.0.0",
   "dependencies": {
-    "mongodb": "^6.5.0",
-    "@aws-sdk/client-s3": "^3.540.0",
-    "@google-cloud/storage": "^7.10.0"
+    "@google-cloud/storage": "^7.11.0",
+    "mongodb": "^6.3.0"
   }
 }
+ \
